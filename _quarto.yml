@@ -1,0 +1,61 @@
+project:
+  execute-dir: project
+  type: manuscript
+
+# jupyter: ./env/bin/python
+
+# manuscript:
+  # notebooks:
+
+# execute:
+#   freeze: true
+
+# bibliography:
+  # - reference.bib
+
+author:
+  - name: Zhehao Hu
+    email: "{{< var email.work >}}"
+    url: https://zzzhehao.github.io
+    affiliations:
+      - name: Department of Biology, University of Hamburg
+        city: Hamburg
+        country: Germany
+        url: https://www.biologie.uni-hamburg.de/en.html
+date-format: long
+
+format:
+  html:
+    theme:
+      light:
+        [
+          theme/global-setting.scss,
+          theme/style.scss,
+          theme/custom-nav.scss,
+          theme/callouts.scss,
+          theme/sort-ui.scss,
+          manuscript.scss,
+        ]
+      dark:
+        [
+          theme/global-setting.scss,
+          theme/style-dark.scss,
+          theme/custom-nav-dark.scss,
+          theme/callouts-dark.scss,
+          theme/sort-ui-dark.scss,
+          manuscript.scss,
+        ]
+    toc: true
+    toc-depth: 4
+    toc-expand: 2
+    code-copy: true
+    code-overflow: wrap
+    code-tools:
+      caption: none
+      source: true
+    highlight-style: atom-one-dark
+  jats: default
+  apaquarto-docx: default
+  apaquarto-pdf: default
+
+lightbox: true

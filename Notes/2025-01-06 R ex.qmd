@@ -1,4 +1,145 @@
 ---
+title: "2025-01-06 R ex"
 date: 2025-01-06
 ---
 
+Apply mean on matrix will collapse the matrix into vector. To apply mean function separately on columns, use `colMeans()`.
+
+```{r}
+library(tidyverse)
+```
+
+## Exercise #1
+
+- Build a matrix with 4 rows and 3 columns, filled with rnorm() values.
+- Replace all negative values by zeros
+- Create two standardized copies of the matrix:
+  - sum of the matrix is 1
+  - sum of each column is 1
+
+Generate a random matrix.
+
+```{r}
+nrow <- 4
+ncol <- 3
+
+set.seed(1)
+raw <- matrix(rnorm(nrow * ncol), nrow = nrow, ncol = ncol)
+raw[raw < 0] <- 0
+
+# As a function
+create_matrix <- function(nrow, ncol) {
+    zero.sum <- T
+    while(zero.sum) {
+        raw <- matrix(rnorm(nrow * ncol), nrow = nrow, ncol = ncol)
+        raw[raw < 0] <- 0
+        zero.sum <- any(colSums(raw) == 0)
+    }
+    return(raw)
+}
+```
+
+Standardize the value of whole matrix (1. matrix, all values sum up to 1)
+
+```{r}
+sum_raw <- sum(raw)
+raw.norm <- raw / sum_raw
+```
+
+The matrix: 
+```{r}
+raw.norm
+```
+
+The sum:
+
+```{r}
+sum(raw.norm)
+```
+
+Standardize the value of each column (2. matrix, each column sums up to 1)
+
+```{r}
+raw.col.norm <- matrix(nrow = nrow, ncol = ncol)
+# for (i in 1:ncol) {
+#     sum <- sum(raw[,i])
+#     raw.col.norm[,i] <- raw[,i] / sum
+# }
+
+# raw / rep(colSums(raw), each = nrow(raw))
+
+raw.col.norm.apply <- apply(raw, 2, \(x) x / sum(x))
+```
+
+The matrix:
+
+```{r}
+raw.col.norm.apply
+```
+
+The sum of each column:
+
+```{r}
+colSums(raw.col.norm.apply)
+```
+
+## Exercise #2: `bipartite::` package
+
+```{r}
+#| output: false
+#| message: false
+library(bipartite)
+```
+
+- [Vignette](https://cran.r-project.org/web/packages/bipartite/vignettes/Intro2bipartite.pdf)
+
+### Use provided dataset
+
+Show the including datasets:
+
+```{r}
+data(package="bipartite") 
+
+str(barrett1987)
+```
+
+Visualize a bipartite interaction matrix:
+
+```{r}
+plotweb(barrett1987)
+```
+
+```{r}
+visweb(barrett1987)
+```
+
+### Use own data
+
+```{r}
+Wiese <- read.csv("Data/Wiese.csv")
+str(Wiese)
+```
+
+Clean the dataset quickly:
+
+```{r}
+Wiese <- Wiese[Wiese$`Bl.te` != "keine",]
+```
+
+```{r}
+weblist <- frame2webs(Wiese, varnames = c("Bl.te", "Beobachtetes.Insekt", "Plot"))
+str(weblist)
+```
+
+```{r}
+walk(weblist, \(x) plotweb(x))
+```
+
+In the first plot: honig bees are more "generalist" on interacting with flowers. 
+
+We can also calculate various indeces (see p. 9 in vignette, also see `?specieslevel()` and `?grouplevel()`)
+
+```{r}
+specieslevel(weblist[[1]], index = "effective partners")
+grouplevel(weblist[[1]], index = "niche overlap")
+```

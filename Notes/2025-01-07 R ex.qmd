@@ -1,0 +1,135 @@
+---
+title: "2025-01-07 R ex"
+---
+
+## The Course Script
+
+JF provided two function: `makeweb()` to simulate a web dataset using `rnorm()` and `sampleweb()` function to generate resampling from generated web. Original R script is stored under "/Resources"
+
+```{r}
+# small simulation for AREES paper, abun&network structure, chicken-or-egg
+
+# ---- functions etc. ----
+library(bipartite)
+
+# load two functions from Fründ et al. 2016 Oikos
+makeweb <- function(specpar = 1, Nbee=4, Nplant=4, specvar=0, planttrait_n="single"){    
+  # function to generate web with defined "specialization"; now the generalized version with multiple methods
+  # specpar is the specialization parameter (always increases with specialization), specvar is within network variation of specialization
+  # specpar is the spec. parameter; exponent in "power", quad.slope in "parabolic", 1/sd in "normal" 
+  # now simplified to method "traitmatch" with nicheshape "normal"!!
+  # planttrait_n is used for method "traitmatch": "single" is one value for each plant per web, "multi" is one value for each plant per bee 
+  # if (specvar != 0) warning('specvar currently ignored')  # currently, all bees in web have same expected specialization
+  #! specvar now implemented: sd-factor; specpar is a random variate of specpar
+  fun_pref <- function(traitdif){
+    specpar.new <- rnorm(1, specpar, specpar*specvar)
+    if (specpar.new <= 0) specpar.new <- 0.1
+    prefs <- dnorm(traitdif, mean=0, sd=1/specpar.new)
+    prefs
+  }
+  if (planttrait_n == "single"){
+    planttrait <- runif(Nplant)    
+    web <- replicate(Nbee, fun_pref(abs(runif(1) - planttrait)))
+  }
+  if (planttrait_n == "multi"){
+    web <- replicate(Nbee, fun_pref(abs(runif(1) - runif(Nplant))))
+  }      
+  web <- web / matrix(colSums(web),nrow=Nplant,ncol=Nbee,byrow=TRUE)    # standardize link weights to probability;
+  web
+}
+
+sampleweb <- function(web,obsperbee,method='perbee'){   # subsampling a network; either fixed Nobs per bee or fixed Nobs per web
+  if(method=='perbee') {
+    sampledweb <- sapply(1:ncol(web), function(j)  {
+      web.j <- web[,j]
+      table(sample(factor(1:length(web.j)),obsperbee,prob=web.j,replace=TRUE))
+    })
+  }
+  if(method=='perweb'){
+    Nobs <- obsperbee * ncol(web)
+    sampledweb.vect <- sample(as.factor(1:length(web)), size=Nobs, prob=as.numeric(web), replace=TRUE)
+    sampledweb <- matrix(as.numeric(table(sampledweb.vect)), nrow=nrow(web))       # puts back into matrix format
+  }
+  dimnames(sampledweb) <- dimnames(web)
+  sampledweb
+}
+```
+
+### Exercise #1 How do sampling effort effects network structure / patterns?
+
+- Use simulation functions to establish the effect of sampling intensity on a network index of your choice
+- `plot(indexvalue ~ Nobs)` # Nobs = observation * ncol(web)
+- use `sampleweb(method = "perweb")`
+
+Create a "parent" web dataset from which the resampling will be drawed.
+
+```{r}
+parent.web <- makeweb(Nbee = 10, Nplant = 10, specpar = 3)
+parent.web
+```
+
+A single subsampling from the parent web data with `obsperbee = 8`.
+
+```{r}
+sample.web <- sampleweb(parent.web, obsperbee = 40, method = "perweb")
+sample.web
+```
+
+Calculate a network index with the `sample.web`
+
+```{r}
+networklevel(sample.web, index = "NODF")
+```
+
+To see the response of the index to sample size of the web, we repeat this process with different web size by changing the `obsperbee` in `sample.web()`.
+
+```{r}
+library(tidyverse)
+indices <- c("NODF", "connectance")
+indices.p.size <- map(indices, \(y) {
+    print(y)
+    index.p.size <- map_dfr(c(1:100), \(x) {
+        sample.web <- sampleweb(parent.web, obsperbee = x, method = "perweb")
+        web.size <- sum(sample.web)
+        index <- networklevel(sample.web, index = y)
+        return(list(Size = web.size, Index = index, name = y))
+    })
+}) %>% bind_rows()
+
+
+# index.p.size
+indices.p.size <- indices.p.size %>%
+    mutate(name = factor(name))
+plot <- indices.p.size %>% ggplot() +
+    geom_point(aes(x = Size, y = Index, color = name))
+plot
+```
+
+### Exercise #2 Fancy Plots using Bluewiese data
+
+A WIP [vignette](/Resources/How_to_plot.html) and functionality of future `bipartite::` package with fancy plotting functionality. 
+
+Repeating same import and basic data cleaning as yesterday:
+
+```{r}
+Wiese <- read.csv("Data/Wiese.csv")
+Wiese <- Wiese[Wiese$`Bl.te` != "keine",]
+weblist <- frame2webs(Wiese, varnames = c("Bl.te", "Beobachtetes.Insekt", "Plot"))
+str(weblist)
+```
+
+`weblist` contains networks of 3 plots. A recap with old `plotweb()` function on those:
+
+```{r}
+walk(weblist, \(x) plotweb(x))
+```
+
+Use new version `plotweb_v2()` to plot BP1 network:
+
+```{r}
+plotweb_v2(weblist[[1]], mar = c(0, 0, 0, 0), text_size = 1, horizontal = T)
+```
+
+```{r}
+plot2webs_v2(weblist[[1]], weblist[[2]], text_size = 0.5, horizontal = T)
+```

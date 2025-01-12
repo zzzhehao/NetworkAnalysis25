@@ -1,0 +1,144 @@
+---
+title: "2025-01-09 R ex"
+data: 2025-01-08
+---
+
+## Modelling (interconnected) pupulation dynamics
+
+Modelling population growth: exponential and logistic growth in continuous and discret time.
+
+### Exponential growth in discrete time
+
+The formula:
+
+$$
+N_{t+1} = (1 + r_d) \cdot N {t}
+$$
+
+```{r}
+library(tidyverse)
+
+t <- c(1:30) # simulation time
+r <- 1.01 # arbitrary
+
+Nr <- 100 # N0 at the beginning
+ppl.vec.exp <- vector(length = 0)
+
+for (t in t) {
+    N0 <- Nr
+    Nr <-  (1 + r) * N0
+    ppl.vec.exp[t] <- Nr
+}
+
+ppl.vec.exp
+plot(ppl.vec.exp)
+```
+
+### Logistic growth in discrete time
+
+The formula:
+
+$$
+
+$$
+
+```{r}
+t <- c(1:20)
+Nr <- 10 # N0 at the beginning
+r_d <- c(0.5, 1.2, 2.2, 3)
+K <- 1e5
+
+ppl.vec.log <- vector(length = 0)
+
+for (t in t) {
+    N0 <- Nr
+    Nr <- (1 + r_d[4] * (1 - (N0/K))) * N0
+    ppl.vec.log[t] <- Nr
+}
+
+ppl.vec.log
+plot(ppl.vec.log)
+```
+
+
+### Continuous time models 
+
+The equation: $\frac{dN}{dt} = N \cdot r \cdot (1-\frac{N}{K})$
+
+Using `deSolve::` packages and the `ode()` function.
+
+```{r}
+library(deSolve)
+cont <- function(t, state.var, parms){
+    N <- state.var["N"]
+    P <- state.var["P"]
+
+    dN_dt <- (parms$r * N) - (parms$a * N * P)
+    dP_dt <- (parms$c * parms$a * N * P) - (parms$m * P)
+
+    return(list(c(dN_dt, dP_dt)))
+}
+
+state.var <- c(
+    N = 100,
+    P = 10
+)
+
+output <- ode(y = state.var, times = 1:200, parms = list(r = 0.5, a = 0.01, c = 0.8, m = 0.8), func = cont)
+output <- output %>% data.frame() %>% `colnames<-`(c("time", "Prey", "Predator"))
+longer_output <- output %>% pivot_longer(c("Prey", "Predator"))
+```
+
+Plot the result:
+
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+clr <- RColorBrewer::brewer.pal(n = 3, name = "Pastel2")
+source("Notes/AES.R")
+
+longer_output %>% ggplot() +
+    geom_line(aes(x = time, y = value, color = name), width = 1) +
+    use_ACTCP_aes() +
+    scale_color_manual(values = clr) +
+    labs(x = "Time", y = "Population", color = "Color")
+```
+
+**Make a shiny APP!**
+
+## Cascade model
+
+- 40 species, trait normally distributed, create network based on cascade model, plot it & calculate the nestedness
+
+```{r}
+c <- 30
+S <- 40
+traits <- rnorm(S, mean = 10, sd = 5)
+traits
+
+mtx <- matrix(nrow = 40, ncol = 40)
+for (i in 1:nrow(mtx)) {
+    for (j in 1:ncol(mtx)) {
+        if (traits[i] > traits[j]) {
+            mtx[i, j] <- 1
+        } else {
+            mtx[i, j] <- 0
+        }
+    }
+}
+
+mtx.boo <- outer(traits, traits, ">")
+
+visweb(mtx.boo)
+networklevel(mtx.boo, index = "NODF")
+
+mtx
+sample(c(TRUE, FALSE), size = 1, prob = c(0.4, 0.6))
+```
+
+```{r}
+library(igraph)
+# body.size <- replicate(40, rnorm(40, mean = 10, sd = 5))
+graph1 <- graph_from_adjacency_matrix(mtx.boo)
+plot(graph1)
+```

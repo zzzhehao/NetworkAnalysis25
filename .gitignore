@@ -1,3 +1,53 @@
+# Created by Zhehao Hu
+
+Data/
+Resources/
+*.pdf
+
+# Quarto
+/_freeze/
+/_extensions/
+/.quarto/
+/_site/
+/_manuscript/
+*_files/
+/site_libs/
+
+# Modules / Libs
+node_modules/
+
+# Obsidian
+.obsidian/
+.pandoc/
+
+# Custom file structure
+confidential/
+resource/
+
+# Temporary
+temp/
+
+# Large files
+*.psd
+*.tif
+*.tiff
+*.t
+*.p
+*.trees
+*.trprobs
+.pptx
+
+# Adobe
+*.lrdata/
+*.lrcat-data/
+*.lrcat-shm
+*.lrcat-wal
+*.lrcat.lock
+
+# RStudio
+*.RProj
+
+# == From here ==
 # Created by https://www.toptal.com/developers/gitignore/api/r,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=r,macos
 

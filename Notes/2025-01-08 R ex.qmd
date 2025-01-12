@@ -1,0 +1,16 @@
+---
+title: "2025-01-08 R ex"
+---
+
+## Multilayer network
+
+We use again the Wiese dataset, but we let `frame2webs()` export array instead of lists, where three slices correspond plots.
+
+```{r}
+library(bipartite)
+Wiese <- read.csv("/Data/Wiese.csv")
+Wiese <- Wiese[Wiese$`Bl.te` != "keine",]
+webarray <- frame2webs(Wiese, varnames = c("Bl.te", "Beobachtetes.Insekt", "Plot"), type.out = "array")
+str(webarray)
+```
+
